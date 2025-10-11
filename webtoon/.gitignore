@@ -1,0 +1,25 @@
+# 🧩 Python 기본 캐시 파일
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.pkl
+
+# 🧱 가상환경
+venv/
+env/
+.venv/
+
+# 🧰 SQLite DB (개인 개발용이면 보통 올리지 않음)
+*.db
+*.sqlite
+*.sqlite3
+
+# ⚙️ VSCode / macOS / 기타 에디터 관련
+.vscode/
+.DS_Store
+
+# 📦 환경 설정 파일 (필요시 예외)
+.env
+*.log

@@ -1,14 +1,24 @@
 from fastapi import FastAPI, APIRouter
 from fastapi.responses import JSONResponse
 import sqlite3
+import os
 
 app = FastAPI()
 router = APIRouter()
 
+# 프로젝트 루트 기준으로 DB 경로 설정
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # .../webtoon-note-BE
+DB_PATH = os.path.join(BASE_DIR, "webtoon", "webtoon_database.sqlite")
+
 # SQLite 연결 설정
-conn = sqlite3.connect("webtoon_database.sqlite", check_same_thread=False)
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
+
+# 라우터 정의
+@router.get("/")
+def say_hi():
+    return {"message": "Server is running!"}
 
 # 라우터 정의
 @router.get("/webtoons")

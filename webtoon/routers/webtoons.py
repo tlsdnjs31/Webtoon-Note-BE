@@ -1,19 +1,12 @@
-# webtoon/routers/webtoons.py
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-import sqlite3
-import os
+from webtoon.database import get_db
 
-router = APIRouter()
+router = APIRouter(
+    tags=["webtoons"]
+)
 
-# 현재 파일(webtoons.py) 기준으로 상위(webtoon) 폴더 찾기
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # .../webtoon-note-BE/webtoon
-DB_PATH = os.path.join(BASE_DIR, "webtoon_database.sqlite")  
-
-# SQLite 연결 설정
-conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-conn.row_factory = sqlite3.Row
-cursor = conn.cursor()
+conn, cursor = get_db()
 
 # 라우터 정의
 @router.get("/")

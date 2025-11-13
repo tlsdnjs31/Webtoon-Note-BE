@@ -29,7 +29,6 @@ def get_all_webtoons():
             title,
             updateDays,
             authors,
-            synopsis,
             tags
         FROM normalized_webtoon""").fetchall()
     data = [dict(r) for r in rows]

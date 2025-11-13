@@ -15,6 +15,39 @@ conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
 
+@router.get("/{webtoon_id}")
+def get_webtoon_by_id(webtoon_id: str):
+    """
+    웹툰 단일 조회 API
+    - webtoon_id: 웹툰 고유 ID
+    """
+    row = cursor.execute(
+        """
+        SELECT
+            id,
+            thumbnail,
+            title,
+            updateDays,
+            authors,
+            synopsis,
+            tags
+        FROM normalized_webtoon WHERE id = ? 
+        """,
+        (webtoon_id,),
+    ).fetchone()
+
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Webtoon not found"},
+            media_type="application/json; charset=utf-8",
+        )
+
+    return JSONResponse(
+        content=dict(row),
+        media_type="application/json; charset=utf-8",
+    )
+
 
 @router.get("/search")
 def search_webtoons(

@@ -24,6 +24,7 @@ def say_hi():
 @router.get("/webtoons")
 def get_all_webtoons():
     rows = cursor.execute("""SELECT 
+            id,
             thumbnail,
             title,
             updateDays,
@@ -55,6 +56,7 @@ def get_webtoons_by_day(day: str):
             status_code=400
         )
     query = """SELECT 
+            id,
             thumbnail,
             title,
             updateDays,

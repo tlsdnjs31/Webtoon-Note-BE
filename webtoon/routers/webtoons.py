@@ -46,7 +46,7 @@ def get_all_webtoons():
         media_type="application/json; charset=utf-8"
     )
 
-@router.get("/webtoons/{day}")
+@router.get("/webtoons/day/{day}")
 def get_webtoons_by_day(day: str):
     valid_days = ["MON", "TUE", "WED", "THR", "FRI", "SAT", "SUN"]
     if day not in valid_days:
@@ -69,7 +69,7 @@ def get_webtoons_by_day(day: str):
         media_type="application/json; charset=utf-8"
     )
 
-@router.get("/webtoons_title/{day}")
+@router.get("/webtoons_title/day/{day}")
 def get_webtoons_by_day(day: str):
     valid_days = ["MON", "TUE", "WED", "THR", "FRI", "SAT", "SUN"]
     if day not in valid_days:

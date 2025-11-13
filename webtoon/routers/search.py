@@ -1,0 +1,62 @@
+# webtoon/routers/search.py
+from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse
+import sqlite3
+import os
+
+router = APIRouter(prefix="/webtoons")  # => /webtoons/search
+
+# 현재 파일(search.py) 기준으로 상위(webtoon) 폴더 찾기
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # .../webtoon-note-BE/webtoon
+DB_PATH = os.path.join(BASE_DIR, "webtoon_database.sqlite")
+
+# SQLite 연결 설정
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+conn.row_factory = sqlite3.Row
+cursor = conn.cursor()
+
+
+@router.get("/search")
+def search_webtoons(
+    q: str = Query(..., min_length=1, description="검색어 (제목/작가/태그/시놉시스 검색)"),
+    day: str | None = Query(None, description="MON/TUE/WED/THR/FRI/SAT/SUN 중 선택 (선택)")
+):
+    """
+    웹툰 검색 API
+    - q: 제목, 작가, 시놉시스, 태그 전체에서 부분 검색
+    - day: 요일 값이 들어오면 요일 필터까지 적용
+    """
+    pattern = f"%{q}%" # 검색어 패턴
+
+    base_query = """
+        SELECT
+            id,
+            thumbnail,
+            title,
+            updateDays,
+            authors,
+            synopsis,
+            tags
+        FROM normalized_webtoon
+        WHERE (
+            title    LIKE ?
+            OR authors  LIKE ?
+            OR synopsis LIKE ?
+            OR tags     LIKE ?
+        )
+    """
+
+    params: list[str] = [pattern, pattern, pattern, pattern]
+
+    # day가 넘어왔으면 요일 필터 추가
+    if day is not None:
+        base_query += " AND updateDays = ?"
+        params.append(day)
+
+    rows = cursor.execute(base_query, params).fetchall()
+    data = [dict(r) for r in rows]
+
+    return JSONResponse(
+        content={"count": len(data), "webtoons": data},
+        media_type="application/json; charset=utf-8"
+    )

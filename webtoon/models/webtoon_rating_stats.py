@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Column, DateTime, Float, Integer, func
+from sqlalchemy import Column, DateTime, Float, Integer, String, func
 
 from webtoon.db.session import Base
 
@@ -12,7 +12,7 @@ class WebtoonRatingStats(Base):
 
     __tablename__ = "webtoon_rating_stats"
 
-    webtoon_id = Column(Integer, primary_key=True)
+    webtoon_id = Column(String, primary_key=True)
     average_rating = Column(Float, nullable=False, default=0.0, server_default="0")
     review_count = Column(Integer, nullable=False, default=0, server_default="0")
     updated_at = Column(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, Tuple
 
 from fastapi import HTTPException, status
 from sqlalchemy import text
@@ -25,7 +25,7 @@ class ReviewService:
     def create_review(
         self,
         *,
-        webtoon_id: int,
+        webtoon_id: str,
         payload: ReviewCreate,
         anonymous_user_id: str,
     ) -> Review:
@@ -51,7 +51,32 @@ class ReviewService:
         self._db.refresh(review)
         return review
 
-    def _ensure_webtoon_exists(self, webtoon_id: int) -> None:
+    def list_reviews(
+        self,
+        *,
+        webtoon_id: str,
+        page: int,
+        limit: int,
+    ) -> Tuple[WebtoonRatingStats, list[Review]]:
+        stats = self._db.get(WebtoonRatingStats, webtoon_id)
+        if stats is None or stats.review_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="해당 웹툰에 대한 리뷰가 존재하지 않습니다.",
+            )
+
+        offset = (page - 1) * limit
+        reviews = (
+            self._db.query(Review)
+            .filter(Review.webtoon_id == webtoon_id)
+            .order_by(Review.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        return stats, reviews
+
+    def _ensure_webtoon_exists(self, webtoon_id: str) -> None:
         exists = self._db.execute(
             text(self._WEBTOON_EXISTS_QUERY), {"webtoon_id": webtoon_id}
         ).scalar()
@@ -61,7 +86,7 @@ class ReviewService:
                 detail="해당 웹툰을 찾을 수 없습니다.",
             )
 
-    def _update_rating_stats(self, webtoon_id: int, new_rating: float) -> None:
+    def _update_rating_stats(self, webtoon_id: str, new_rating: float) -> None:
         stats = self._db.get(WebtoonRatingStats, webtoon_id)
 
         if stats is None:

@@ -66,14 +66,15 @@ def search_webtoons(
             tags
         FROM normalized_webtoon
         WHERE (
-            title    LIKE ?
+            id        LIKE ?
+            OR title    LIKE ?
             OR authors  LIKE ?
             OR synopsis LIKE ?
             OR tags     LIKE ?
         )
     """
 
-    params: list[str] = [pattern, pattern, pattern, pattern]
+    params: list[str] = [pattern, pattern, pattern, pattern, pattern]
 
     # day가 넘어왔으면 요일 필터 추가
     if day is not None:

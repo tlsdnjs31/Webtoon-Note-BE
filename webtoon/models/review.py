@@ -13,7 +13,7 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    webtoon_id = Column(Integer, nullable=False, index=True)
+    webtoon_id = Column(String, nullable=False, index=True)
     content = Column(Text, nullable=False)
     rating = Column(Float, nullable=False)
     likes = Column(Integer, nullable=False, default=0, server_default="0")

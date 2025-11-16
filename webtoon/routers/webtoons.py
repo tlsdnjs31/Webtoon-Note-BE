@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from webtoon.database import get_db
 
@@ -63,6 +63,35 @@ def get_webtoons_by_day(day: str):
         media_type="application/json; charset=utf-8"
     )
 
+
+@router.get("/webtoons/sample")
+def get_sample_webtoons(
+    limit: int = Query(5, ge=1, le=50, description="가져올 테스트용 웹툰 개수 (기본 5)")
+):
+    """
+    테스트용으로 소량의 웹툰만 조회하는 엔드포인트.
+    """
+    rows = cursor.execute(
+        """
+        SELECT
+            id,
+            thumbnail,
+            title,
+            updateDays,
+            authors,
+            tags
+        FROM normalized_webtoon
+        ORDER BY id
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    data = [dict(r) for r in rows]
+    return JSONResponse(
+        content={"count": len(data), "webtoons": data},
+        media_type="application/json; charset=utf-8",
+    )
+
 @router.get("/webtoons_title/day/{day}")
 def get_webtoons_by_day(day: str):
     valid_days = ["MON", "TUE", "WED", "THR", "FRI", "SAT", "SUN"]
@@ -80,4 +109,3 @@ def get_webtoons_by_day(day: str):
         content={"count": len(data), "webtoons": data},
         media_type="application/json; charset=utf-8"
     )
-

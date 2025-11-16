@@ -10,7 +10,7 @@
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `webtoon_id` | integer (>= 1) | Yes | Target webtoon ID from `normalized_webtoon.id`. |
+| `webtoon_id` | string | Yes | Target webtoon ID from `normalized_webtoon.id` (e.g., `kakao_1000`). |
 
 ### Request Body
 
@@ -31,7 +31,7 @@
 ```json
 {
   "id": 15,
-  "webtoon_id": 1,
+  "webtoon_id": "kakao_1000",
   "content": "스토리가 정말 흥미진진해요!",
   "rating": 4.5,
   "likes": 0,

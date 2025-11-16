@@ -7,7 +7,12 @@ from sqlalchemy.orm import Session
 
 from webtoon.db import get_session
 from webtoon.dependencies.auth import get_anonymous_user_id
-from webtoon.schemas.review import ReviewCreate, ReviewListResponse, ReviewResponse
+from webtoon.schemas.review import (
+    ReviewCreate,
+    ReviewListResponse,
+    ReviewResponse,
+    ReviewUpdate,
+)
 from webtoon.services.review_service import ReviewService
 
 router = APIRouter(tags=["reviews"])
@@ -54,3 +59,25 @@ def list_reviews(
         limit=limit,
         reviews=reviews,
     )
+
+
+@router.put(
+    "/webtoons/{webtoon_id}/reviews",
+    response_model=ReviewResponse,
+    status_code=status.HTTP_200_OK,
+)
+def update_review(
+    payload: ReviewUpdate,
+    webtoon_id: str = Path(..., min_length=1, description="수정할 리뷰의 웹툰 ID"),
+    db: Session = Depends(get_session),
+    anonymous_user_id: str = Depends(get_anonymous_user_id),
+) -> ReviewResponse:
+    """Update the review authored by the anon user for the given webtoon."""
+
+    service = ReviewService(db)
+    review = service.update_review(
+        webtoon_id=webtoon_id,
+        payload=payload,
+        anonymous_user_id=anonymous_user_id,
+    )
+    return ReviewResponse.model_validate(review)

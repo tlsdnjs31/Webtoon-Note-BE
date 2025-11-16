@@ -15,6 +15,13 @@ class ReviewCreate(BaseModel):
     rating: float = Field(..., ge=0, le=5)
 
 
+class ReviewUpdate(BaseModel):
+    """Payload used when clients modify an existing review."""
+
+    content: str = Field(..., min_length=1, max_length=2000)
+    rating: float = Field(..., ge=0, le=5)
+
+
 class ReviewResponse(BaseModel):
     """Response schema mirroring the review record returned by the API."""
 
@@ -25,6 +32,7 @@ class ReviewResponse(BaseModel):
     likes: int
     created_at: datetime
     anonymous_user_id: str
+    updated_at: datetime
 
     model_config = {
         "from_attributes": True,

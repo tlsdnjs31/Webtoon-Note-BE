@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from webtoon.models import Review, WebtoonRatingStats
-from webtoon.schemas.review import ReviewCreate
+from webtoon.schemas.review import ReviewCreate, ReviewUpdate
 
 
 class ReviewService:
@@ -30,6 +30,20 @@ class ReviewService:
         anonymous_user_id: str,
     ) -> Review:
         self._ensure_webtoon_exists(webtoon_id)
+
+        has_existing = (
+            self._db.query(Review.id)
+            .filter(
+                Review.webtoon_id == webtoon_id,
+                Review.anonymous_user_id == anonymous_user_id,
+            )
+            .first()
+        )
+        if has_existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 해당 웹툰에 대한 리뷰를 작성했습니다.",
+            )
 
         review = Review(
             webtoon_id=webtoon_id,
@@ -76,6 +90,45 @@ class ReviewService:
         )
         return stats, reviews
 
+    def update_review(
+        self,
+        *,
+        webtoon_id: str,
+        payload: ReviewUpdate,
+        anonymous_user_id: str,
+    ) -> Review:
+        self._ensure_webtoon_exists(webtoon_id)
+
+        review = (
+            self._db.query(Review)
+            .filter(
+                Review.webtoon_id == webtoon_id,
+                Review.anonymous_user_id == anonymous_user_id,
+            )
+            .order_by(Review.created_at.desc())
+            .first()
+        )
+        if review is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only update your own review",
+            )
+
+        previous_rating = review.rating
+        review.content = payload.content
+        review.rating = payload.rating
+
+        self._recalculate_rating_stats(webtoon_id, previous_rating, payload.rating)
+
+        try:
+            self._db.commit()
+        except Exception:
+            self._db.rollback()
+            raise
+
+        self._db.refresh(review)
+        return review
+
     def _ensure_webtoon_exists(self, webtoon_id: str) -> None:
         exists = self._db.execute(
             text(self._WEBTOON_EXISTS_QUERY), {"webtoon_id": webtoon_id}
@@ -100,4 +153,20 @@ class ReviewService:
 
         total = stats.average_rating * stats.review_count + new_rating
         stats.review_count += 1
+        stats.average_rating = total / stats.review_count
+
+    def _recalculate_rating_stats(
+        self,
+        webtoon_id: str,
+        previous_rating: float,
+        new_rating: float,
+    ) -> None:
+        stats = self._db.get(WebtoonRatingStats, webtoon_id)
+        if stats is None or stats.review_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="해당 웹툰에 대한 리뷰가 존재하지 않습니다.",
+            )
+
+        total = stats.average_rating * stats.review_count - previous_rating + new_rating
         stats.average_rating = total / stats.review_count

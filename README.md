@@ -36,6 +36,7 @@
   "rating": 4.5,
   "likes": 0,
   "created_at": "2025-11-12T18:40:00",
+  "updated_at": "2025-11-12T18:40:00",
   "anonymous_user_id": "a38f8a13-41be-4ebe-9fc7-3f79bfb652f5"
 }
 ```
@@ -58,6 +59,7 @@
 | Status | When | Body |
 | --- | --- | --- |
 | `404` | `webtoon_id` does not exist in `normalized_webtoon`. | `{"detail": "해당 웹툰을 찾을 수 없습니다."}` |
+| `409` | `anon_id` already has a review for the specified `webtoon_id`. | `{"detail": "이미 해당 웹툰에 대한 리뷰를 작성했습니다."}` |
 | `422` | Validation fails (missing fields, rating out of range, empty content, etc.). | FastAPI validation payload detailing the offending field. |
 | `500` | Unexpected server/database errors (transaction rollbacks are logged; a generic message is returned). | `{"detail": "Internal Server Error"}` |
 
@@ -65,3 +67,54 @@
 
 - `likes` is returned to support future “like review” features but currently always starts at zero.
 - Additional moderation (profanity filtering, spam detection) can be layered on top of the service without changing the contract.
+
+## Review Update API
+
+| Endpoint | Method |
+| --- | --- |
+| `/webtoons/{webtoon_id}/reviews` | PUT |
+
+### Path Parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `webtoon_id` | string | ID of the webtoon whose review should be updated (e.g., `kakao_1000`). |
+
+### Request Body
+
+```json
+{
+  "content": "초반보다 후반이 훨씬 재밌어요!",
+  "rating": 4.8
+}
+```
+
+### Response `200 OK`
+
+```json
+{
+  "id": 15,
+  "webtoon_id": "kakao_1000",
+  "content": "초반보다 후반이 훨씬 재밌어요!",
+  "rating": 4.8,
+  "likes": 0,
+  "created_at": "2025-11-12T18:40:00",
+  "updated_at": "2025-11-12T21:10:00",
+  "anonymous_user_id": "a38f8a13-41be-4ebe-9fc7-3f79bfb652f5"
+}
+```
+
+### Additional Rules
+
+- Ownership is verified using the `anon_id` cookie; only the author can update their review.
+- The review is identified through the combination of `webtoon_id` and `anon_id`. An attempt to edit someone else’s review returns `403`.
+- Average star rating is recalculated automatically after an update.
+- `updated_at` captures the most recent modification timestamp.
+
+### Failure Responses
+
+| Status | When | Body |
+| --- | --- | --- |
+| `403` | Review exists for the `webtoon_id` but belongs to a different `anon_id`. | `{"detail": "You can only update your own review"}` |
+| `404` | `webtoon_id` does not exist or the stat entry cannot be located during recalculation. | `{"detail": "해당 웹툰을 찾을 수 없습니다."}` |
+| `422` | Validation fails (missing fields, rating out of range, empty content, etc.). | FastAPI validation payload detailing the offending field. |

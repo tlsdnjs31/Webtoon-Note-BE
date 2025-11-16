@@ -23,3 +23,9 @@ class Review(Base):
         nullable=False,
         server_default=func.current_timestamp(),
     )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )

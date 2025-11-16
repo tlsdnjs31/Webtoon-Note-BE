@@ -62,3 +62,10 @@ class ReviewListResponse(BaseModel):
     page: int
     limit: int
     reviews: List[ReviewListItem]
+
+
+class ReviewLikeResponse(BaseModel):
+    """Response for the review like endpoint."""
+
+    review_id: int
+    likes: int

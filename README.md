@@ -1,5 +1,48 @@
 # webtoon-note-BE
 
+## Anonymous ID API
+
+| Endpoint | Method |
+| --- | --- |
+| `/auth/anonymous` | GET |
+
+### Request
+
+`GET /auth/anonymous`
+
+### Response `200 OK`
+
+- New issuance
+
+```json
+{
+  "anon_id": "d9f2a417-5cb1-4df3-b28f-56c7137e75c9",
+  "status": "new"
+}
+```
+
+- Existing cookie
+
+```json
+{
+  "anon_id": "a38f8a13-43df-4e8b-bbda-991db3f7fcb7",
+  "status": "existing"
+}
+```
+
+### Failure Responses
+
+| Status | When | Body |
+| --- | --- | --- |
+| `500` | UUID generation or cookie handling fails unexpectedly. | `{"detail": "Internal Server Error"}` |
+
+### Notes
+
+- The endpoint reuses the `anon_id` cookie logic used by review-related APIs.
+- When a cookie is missing, a new UUID is minted and returned with `Set-Cookie` (HttpOnly, SameSite=Lax, max-age 1 year).
+- When a cookie is present, it is simply echoed back with `status: "existing"`.
+- `anon_id` is used for review creation limits and duplicate-like prevention, and can later map to a logged-in `user_id`.
+
 ## Review Creation API
 
 | Endpoint | Method |
@@ -118,3 +161,41 @@
 | `403` | Review exists for the `webtoon_id` but belongs to a different `anon_id`. | `{"detail": "You can only update your own review"}` |
 | `404` | `webtoon_id` does not exist or the stat entry cannot be located during recalculation. | `{"detail": "해당 웹툰을 찾을 수 없습니다."}` |
 | `422` | Validation fails (missing fields, rating out of range, empty content, etc.). | FastAPI validation payload detailing the offending field. |
+
+## Review Like API
+
+| Endpoint | Method |
+| --- | --- |
+| `/reviews/{review_id}/like` | POST |
+
+### Path Parameters
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `review_id` | integer | Identifier of the review to like. |
+
+### Request Example
+
+`POST /reviews/27/like` with cookie `anon_id=<uuid>`
+
+### Response `200 OK`
+
+```json
+{
+  "review_id": 27,
+  "likes": 4
+}
+```
+
+### Failure Responses
+
+| Status | When | Body |
+| --- | --- | --- |
+| `400` | The anon user already liked the review. | `{"detail": "이미 좋아요를 누른 사용자입니다."}` |
+| `404` | Review ID does not exist. | `{"detail": "존재하지 않는 리뷰입니다."}` |
+| `500` | Unexpected server/database errors. | `{"detail": "Internal Server Error"}` |
+
+### Notes
+
+- Likes are keyed by `(anon_id, review_id)` and cannot be undone.
+- Each successful call increments the review's `likes` field atomically.

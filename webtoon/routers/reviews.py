@@ -9,6 +9,7 @@ from webtoon.db import get_session
 from webtoon.dependencies.auth import get_anonymous_user_id
 from webtoon.schemas.review import (
     ReviewCreate,
+    ReviewLikeResponse,
     ReviewListResponse,
     ReviewResponse,
     ReviewUpdate,
@@ -81,3 +82,20 @@ def update_review(
         anonymous_user_id=anonymous_user_id,
     )
     return ReviewResponse.model_validate(review)
+
+
+@router.post(
+    "/reviews/{review_id}/like",
+    response_model=ReviewLikeResponse,
+    status_code=status.HTTP_200_OK,
+)
+def like_review(
+    review_id: int = Path(..., ge=1, description="좋아요를 누를 리뷰 ID"),
+    db: Session = Depends(get_session),
+    anonymous_user_id: str = Depends(get_anonymous_user_id),
+) -> ReviewLikeResponse:
+    """Register a like for the given review on behalf of the anon user."""
+
+    service = ReviewService(db)
+    review = service.like_review(review_id=review_id, anonymous_user_id=anonymous_user_id)
+    return ReviewLikeResponse(review_id=review.id, likes=review.likes)

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from webtoon.db import Base, engine
+from webtoon.routers.auth import router as auth_router
 from webtoon.routers.reviews import router as reviews_router
 from webtoon.routers.search import router as search_router
 from webtoon.routers.webtoons import router as webtoons_router
@@ -32,3 +33,4 @@ app.add_middleware(
 app.include_router(webtoons_router)
 app.include_router(search_router)
 app.include_router(reviews_router)
+app.include_router(auth_router)

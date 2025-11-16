@@ -8,7 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from webtoon.models import Review, WebtoonRatingStats
+from webtoon.models import Review, ReviewLike, WebtoonRatingStats
 from webtoon.schemas.review import ReviewCreate, ReviewUpdate
 
 
@@ -170,3 +170,38 @@ class ReviewService:
 
         total = stats.average_rating * stats.review_count - previous_rating + new_rating
         stats.average_rating = total / stats.review_count
+
+    def like_review(self, *, review_id: int, anonymous_user_id: str) -> Review:
+        review = self._db.get(Review, review_id)
+        if review is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="존재하지 않는 리뷰입니다.",
+            )
+
+        already_liked = (
+            self._db.query(ReviewLike)
+            .filter(
+                ReviewLike.review_id == review_id,
+                ReviewLike.anonymous_user_id == anonymous_user_id,
+            )
+            .first()
+        )
+        if already_liked:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이미 좋아요를 누른 사용자입니다.",
+            )
+
+        like = ReviewLike(review_id=review_id, anonymous_user_id=anonymous_user_id)
+        self._db.add(like)
+        review.likes += 1
+
+        try:
+            self._db.commit()
+        except Exception:
+            self._db.rollback()
+            raise
+
+        self._db.refresh(review)
+        return review

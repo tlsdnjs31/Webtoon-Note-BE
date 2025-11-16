@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, func
 
 from webtoon.db.session import Base
 
@@ -13,12 +13,7 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    webtoon_id = Column(
-        Integer,
-        ForeignKey("normalized_webtoon.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
+    webtoon_id = Column(Integer, nullable=False, index=True)
     content = Column(Text, nullable=False)
     rating = Column(Float, nullable=False)
     likes = Column(Integer, nullable=False, default=0, server_default="0")

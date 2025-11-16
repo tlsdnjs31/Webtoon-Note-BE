@@ -1,0 +1,8 @@
+# Local development artifacts
+.venv/
+.DS_Store
+
+# SQLite databases (generated at runtime)
+*.db
+*.sqlite
+*.sqlite3

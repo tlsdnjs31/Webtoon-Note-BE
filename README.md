@@ -1,5 +1,40 @@
 # webtoon-note-BE
 
+## Webtoon List API
+
+| Endpoint | Method |
+| --- | --- |
+| `/webtoons` | GET |
+
+### Query Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | integer | No | 1부터 시작하는 페이지 번호 (기본 1, 페이지 크기 16으로 고정). |
+| `webtoon_id` | string | No | 특정 ID로 필터 (예: `kakao_1000`). |
+
+### Response `200 OK`
+
+```json
+{
+  "page": 1,
+  "page_size": 16,
+  "total": 320,
+  "total_pages": 20,
+  "webtoons": [
+    {
+      "id": "kakao_1000",
+      "thumbnail": "https://.../thumb.png",
+      "title": "웹툰 제목",
+      "updateDays": "MON",
+      "authors": "작가명",
+      "tags": "태그 리스트",
+      "webtoon_id": "kakao_1000"
+    }
+  ]
+}
+```
+
 ## Anonymous ID API
 
 | Endpoint | Method |

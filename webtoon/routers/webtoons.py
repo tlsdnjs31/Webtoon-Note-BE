@@ -7,6 +7,7 @@ router = APIRouter(
 )
 
 conn, cursor = get_db()
+PAGE_SIZE = 16
 
 # 라우터 정의
 @router.get("/")
@@ -18,30 +19,48 @@ def say_hi():
 def get_all_webtoons(
     webtoon_id: str | None = Query(
         None, min_length=1, description="특정 웹툰 ID로 필터 (예: kakao_1000)"
-    )
+    ),
+    page: int = Query(1, ge=1, description="조회할 페이지 번호 (1부터 시작)"),
 ):
-    base_query = """SELECT 
+    where_clause = ""
+    params: list = []
+
+    if webtoon_id:
+        where_clause = " WHERE id = ?"
+        params.append(webtoon_id)
+
+    total_row = cursor.execute(
+        f"SELECT COUNT(*) AS cnt FROM normalized_webtoon{where_clause}",
+        params,
+    ).fetchone()
+    total = total_row["cnt"] if total_row is not None else 0
+
+    rows = cursor.execute(
+        f"""SELECT 
             id,
             thumbnail,
             title,
             updateDays,
             authors,
             tags
-        FROM normalized_webtoon"""
-    params: list[str] = []
-
-    if webtoon_id:
-        base_query += " WHERE id = ?"
-        params.append(webtoon_id)
-
-    rows = cursor.execute(base_query, params).fetchall()
+        FROM normalized_webtoon{where_clause}
+        ORDER BY id
+        LIMIT ? OFFSET ?""",
+        (*params, PAGE_SIZE, (page - 1) * PAGE_SIZE),
+    ).fetchall()
     data: list[dict] = []
     for r in rows:
         item = dict(r)
         item["webtoon_id"] = item["id"]
         data.append(item)
     return JSONResponse(
-        content={"webtoons": data},
+        content={
+            "page": page,
+            "page_size": PAGE_SIZE,
+            "total": total,
+            "total_pages": (total + PAGE_SIZE - 1) // PAGE_SIZE,
+            "webtoons": data,
+        },
         media_type="application/json; charset=utf-8"
     )
     

@@ -1,10 +1,12 @@
 annotated-types==0.7.0
 anyio==4.9.0
-click==8.2.1
+# click 8.2.x is not published; pin to latest 8.1.x for Python 3.9 compatibility
+click==8.1.8
 fastapi==0.116.1
 h11==0.16.0
 idna==3.10
-numpy==2.3.2
+# numpy 2.0+ requires Python >=3.10; pin to last release supporting 3.9
+numpy==1.26.4
 pandas==2.3.1
 pydantic==2.11.7
 pydantic_core==2.33.2

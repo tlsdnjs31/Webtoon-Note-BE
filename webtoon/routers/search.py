@@ -9,40 +9,6 @@ router = APIRouter(
 
 conn, cursor = get_db()
 
-@router.get("/{webtoon_id}")
-def get_webtoon_by_id(webtoon_id: str):
-    """
-    웹툰 단일 조회 API
-    - webtoon_id: 웹툰 고유 ID
-    """
-    row = cursor.execute(
-        """
-        SELECT
-            id,
-            thumbnail,
-            title,
-            updateDays,
-            authors,
-            synopsis,
-            tags
-        FROM normalized_webtoon WHERE id = ? 
-        """,
-        (webtoon_id,),
-    ).fetchone()
-
-    if row is None:
-        return JSONResponse(
-            status_code=404,
-            content={"error": "Webtoon not found"},
-            media_type="application/json; charset=utf-8",
-        )
-
-    return JSONResponse(
-        content=dict(row),
-        media_type="application/json; charset=utf-8",
-    )
-
-
 @router.get("/search")
 def search_webtoons(
     q: str = Query(..., min_length=1, description="검색어 (제목/작가/태그/시놉시스 검색)"),
@@ -82,9 +48,50 @@ def search_webtoons(
         params.append(day)
 
     rows = cursor.execute(base_query, params).fetchall()
-    data = [dict(r) for r in rows]
+    data: list[dict] = []
+    for r in rows:
+        item = dict(r)
+        item["webtoon_id"] = item["id"]
+        data.append(item)
 
     return JSONResponse(
         content={"count": len(data), "webtoons": data},
         media_type="application/json; charset=utf-8"
+    )
+
+
+@router.get("/{webtoon_id}")
+def get_webtoon_by_id(webtoon_id: str):
+    """
+    웹툰 단일 조회 API
+    - webtoon_id: 웹툰 고유 ID
+    """
+    row = cursor.execute(
+        """
+        SELECT
+            id,
+            thumbnail,
+            title,
+            updateDays,
+            authors,
+            synopsis,
+            tags
+        FROM normalized_webtoon WHERE id = ? 
+        """,
+        (webtoon_id,),
+    ).fetchone()
+
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Webtoon not found"},
+            media_type="application/json; charset=utf-8",
+        )
+
+    data = dict(row)
+    data["webtoon_id"] = data["id"]
+
+    return JSONResponse(
+        content=data,
+        media_type="application/json; charset=utf-8",
     )

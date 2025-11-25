@@ -1,0 +1,11 @@
+# Files/directories to exclude from Cloud Run source uploads.
+# IMPORTANT: Do NOT list *.sqlite here; the app depends on bundled SQLite data.
+.gcloudignore
+.git
+.gitignore
+**/.git/**
+**/.git/**/*
+**/__pycache__/**
+**/*.pyc
+.venv/
+.DS_Store

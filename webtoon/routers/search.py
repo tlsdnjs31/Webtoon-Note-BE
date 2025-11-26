@@ -4,12 +4,13 @@ from fastapi.responses import JSONResponse
 from webtoon.database import get_db
 
 router = APIRouter(
+    prefix="/search",
     tags=["webtoons-search"]
 )
 
 conn, cursor = get_db()
 
-@router.get("/search")
+@router.get("")
 def search_webtoons(
     q: str = Query(..., min_length=1, description="검색어 (제목/작가/태그/시놉시스 검색)"),
     day: str | None = Query(None, description="MON/TUE/WED/THR/FRI/SAT/SUN 중 선택 (선택)")

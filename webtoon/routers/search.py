@@ -48,6 +48,10 @@ def search_webtoons(
         base_query += " AND updateDays = ?"
         params.append(day)
 
+    # 제목 매칭 결과를 먼저 노출
+    base_query += "\n    ORDER BY (title LIKE ?) DESC, title"
+    params.append(pattern)
+
     rows = cursor.execute(base_query, params).fetchall()
     data: list[dict] = []
     for r in rows:

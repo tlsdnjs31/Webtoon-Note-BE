@@ -6,6 +6,10 @@ router = APIRouter(
     tags=["webtoons"]
 )
 
+DEDUP_FILTER = (
+    "NOT (provider = 'KAKAO' AND title IN (SELECT title FROM normalized_webtoon WHERE provider = 'KAKAO_PAGE'))"
+)
+
 conn, cursor = get_db()
 PAGE_SIZE = 16
 
@@ -22,12 +26,14 @@ def get_all_webtoons(
     ),
     page: int = Query(1, ge=1, description="조회할 페이지 번호 (1부터 시작)"),
 ):
-    where_clause = ""
+    filters: list[str] = [DEDUP_FILTER]
     params: list = []
 
     if webtoon_id:
-        where_clause = " WHERE id = ?"
+        filters.append("id = ?")
         params.append(webtoon_id)
+
+    where_clause = f" WHERE {' AND '.join(filters)}"
 
     total_row = cursor.execute(
         f"SELECT COUNT(*) AS cnt FROM normalized_webtoon{where_clause}",
@@ -66,7 +72,9 @@ def get_all_webtoons(
     
 @router.get("/webtoons_title")
 def get_all_webtoons():
-    rows = cursor.execute("SELECT title FROM normalized_webtoon").fetchall()
+    rows = cursor.execute(
+        f"SELECT title FROM normalized_webtoon WHERE {DEDUP_FILTER}"
+    ).fetchall()
     data = [dict(r) for r in rows]
     return JSONResponse(
         content={"webtoons": data},
@@ -89,7 +97,10 @@ def get_webtoons_by_day(day: str):
             authors,
             synopsis,
             tags FROM normalized_webtoon WHERE updateDays = ?"""
-    rows = cursor.execute(query, (day,)).fetchall()
+    rows = cursor.execute(
+        f"{query} AND {DEDUP_FILTER}",
+        (day,),
+    ).fetchall()
     data: list[dict] = []
     for r in rows:
         item = dict(r)
@@ -110,7 +121,7 @@ def get_sample_webtoons(
     테스트용으로 소량의 웹툰만 조회하는 엔드포인트.
     """
     rows = cursor.execute(
-        """
+        f"""
         SELECT
             id,
             thumbnail,
@@ -119,6 +130,7 @@ def get_sample_webtoons(
             authors,
             tags
         FROM normalized_webtoon
+        WHERE {DEDUP_FILTER}
         ORDER BY id
         LIMIT ?
         """,
@@ -143,7 +155,7 @@ def get_webtoons_by_day(day: str):
             status_code=400
         )
 
-    query = "SELECT title FROM normalized_webtoon WHERE updateDays = ?"
+    query = f"SELECT title FROM normalized_webtoon WHERE updateDays = ? AND {DEDUP_FILTER}"
     rows = cursor.execute(query, (day,)).fetchall()
     data = [dict(r) for r in rows]
 

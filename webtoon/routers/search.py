@@ -8,6 +8,10 @@ router = APIRouter(
     tags=["webtoons-search"]
 )
 
+DEDUP_FILTER = (
+    "NOT (provider = 'KAKAO' AND title IN (SELECT title FROM normalized_webtoon WHERE provider = 'KAKAO_PAGE'))"
+)
+
 conn, cursor = get_db()
 
 @router.get("")
@@ -22,7 +26,7 @@ def search_webtoons(
     """
     pattern = f"%{q}%" # 검색어 패턴
 
-    base_query = """
+    base_query = f"""
         SELECT
             id,
             thumbnail,
@@ -39,6 +43,7 @@ def search_webtoons(
             OR synopsis LIKE ?
             OR tags     LIKE ?
         )
+        AND {DEDUP_FILTER}
     """
 
     params: list[str] = [pattern, pattern, pattern, pattern, pattern]
@@ -72,7 +77,7 @@ def get_webtoon_by_id(webtoon_id: str):
     - webtoon_id: 웹툰 고유 ID
     """
     row = cursor.execute(
-        """
+        f"""
         SELECT
             id,
             thumbnail,
@@ -81,7 +86,7 @@ def get_webtoon_by_id(webtoon_id: str):
             authors,
             synopsis,
             tags
-        FROM normalized_webtoon WHERE id = ? 
+        FROM normalized_webtoon WHERE id = ? AND {DEDUP_FILTER}
         """,
         (webtoon_id,),
     ).fetchone()
